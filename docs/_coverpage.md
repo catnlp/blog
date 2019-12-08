@@ -1,12 +1,7 @@
-![logo](_media/icon.svg)
+# catnlp
 
-# docsify
+> 爱猫、爱自由
 
-> A magical documentation site generator.
 
-* Simple and lightweight (~12kb gzipped)
-* Multiple themes
-* Not build static html files
-
-[GitHub](https://github.com/docsifyjs/docsify/)
+[GitHub](https://github.com/catnlp/blog)
 [Get Started](#开始)
