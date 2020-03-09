@@ -3,7 +3,6 @@
 > 爱猫、爱生活
 
 - 大道至简
-- 通用人工智能必将实现
 - 人生苦短，我用Python、PyTorch
 
 [GitHub](https://github.com/catnlp)
