@@ -1,9 +1,11 @@
+* Python
+    * [引言](python/introduction.md)
+	* [单元测试](python/unittest.md)
+* PyTorch
+    * [引言](pytorch/introduction.md)
 * 自然语言处理
 	* [引言](nlp/introduction.md)
 	* [命名实体识别](nlp/ner.md)
-* Python实践
-    * [引言](python/introduction.md)
-	* [单元测试](python/unittest.md)
 * 算法
     * [引言](algorithm/introduction.md)
     * [区间调度](algorithm/scheduling.md)
