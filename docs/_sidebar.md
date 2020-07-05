@@ -5,7 +5,11 @@
     * [引言](pytorch/introduction.md)
 * 自然语言处理
 	* [引言](nlp/introduction.md)
+	* [工具](nlp/tool.md)
 	* [命名实体识别](nlp/ner.md)
+	* [预训练模型](nlp/pretrained_model.md)
+	* [学习率](nlp/learning_rate.md)
 * 算法
     * [引言](algorithm/introduction.md)
+    * [树](algorithm/tree.md)
     * [区间调度](algorithm/scheduling.md)
