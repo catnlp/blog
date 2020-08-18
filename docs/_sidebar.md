@@ -14,5 +14,6 @@
 	* [学习率](nlp/learning_rate.md)
 * 算法
     * [引言](algorithm/introduction.md)
+    * [字符串](algorithm/string.md)
     * [树](algorithm/tree.md)
     * [区间调度](algorithm/scheduling.md)
