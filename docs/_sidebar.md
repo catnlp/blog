@@ -3,6 +3,9 @@
 	* [单元测试](python/unittest.md)
 * PyTorch
     * [引言](pytorch/introduction.md)
+    * [torch](pytorch/torch.md)
+* 机器学习
+    * [引言](ml/introduction.md)
 * 自然语言处理
 	* [引言](nlp/introduction.md)
 	* [工具](nlp/tool.md)
