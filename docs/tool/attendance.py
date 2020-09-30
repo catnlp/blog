@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 import argparse
 
 parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('--excel', type=str, default="8月考勤.xlsx")
+parser.add_argument('--excel', type=str, default="9月考勤2020.xlsx")  # 8月考勤2020
 args = parser.parse_args()
 
 
@@ -30,12 +30,18 @@ class Attendance:
                                 "下班早退120分钟以上", "下班早退30到60分钟",
                                 "下班早退0到10分钟", "下班早退60到120分钟",
                                 "上班迟到0到10分钟", "上班迟到10到30分钟"]
-        self.special = ["行政部", "人事部", "财务部", "法务部"]
+        self.special = ["行政部", "人力资源部", "财务部", "法务部"]
 
     def process(self):
         wb = load_workbook(filename=self._excel)
         rs = wb['月度汇总']
-        ws = wb.create_sheet('月度汇总_自动')
+        # ws = wb.create_sheet('月度汇总_自动')
+        #
+        # ws.cell(row=3, column=1).value = "姓名"
+        # ws.cell(row=3, column=2).value = "备注1"
+        # ws.cell(row=3, column=3).value = "备注1—自动"
+        # ws.cell(row=3, column=4).value = "备注2"
+        # ws.cell(row=3, column=5).value = "备注2-自动"
 
         search = {}
         pos2name = {}
@@ -120,6 +126,8 @@ class Attendance:
                              "上班迟到120分钟以上"]
                     money_num = 0
                     money_day = 0
+                    late_flag = True
+                    is_late = False
                     for late in lates:
                         if re.search(r"(\d+)到(\d+)", late):
                             match = re.search(r"(\d+)到(\d+)", late)
@@ -135,6 +143,8 @@ class Attendance:
                                         num = 0
                                         remark1.append(
                                             f"迟到{n1}-{n2}分钟{num_late}次")
+                                        late_flag = False
+                                        is_late = True
                                         money_num += 10 * num_late
                                     else:
                                         num = max(num - num_late, 0)
@@ -142,7 +152,13 @@ class Attendance:
                                 num_late = rs.cell(row=i + 1,
                                                    column=search[late]).value
                                 if num_late:
-                                    remark1.append(f"迟到{n1}-{n2}分钟{num_late}次")
+                                    is_late = True
+                                    if late_flag:
+                                        remark1.append(f"迟到{n1}-{n2}分钟{num_late}次")
+                                        late_flag = False
+                                    else:
+                                        remark1.append(
+                                            f"{n1}-{n2}分钟{num_late}次")
                                     if n1 == "10":
                                         money_num += 20 * num_late
                                     elif n1 == "30":
@@ -153,12 +169,18 @@ class Attendance:
                             num_late = rs.cell(row=i + 1,
                                                column=search[late]).value
                             if num_late:
-                                remark1.append(f"迟到120分钟以上{num_late}次")
+                                is_late = True
+                                if late_flag:
+                                    remark1.append(f"迟到120分钟以上{num_late}次")
+                                else:
+                                    remark1.append(f"120分钟以上{num_late}次")
                                 money_day += num_late
 
                     earlys = ["下班早退0到10分钟", "下班早退10到30分钟",
                               "下班早退30到60分钟", "下班早退60到120分钟",
                               "下班早退120分钟以上", ]
+                    early_flag = True
+                    is_early = False
                     for early in earlys:
                         if re.search(r"(\d+)到(\d+)", early):
                             match = re.search(r"(\d+)到(\d+)", early)
@@ -174,6 +196,8 @@ class Attendance:
                                         num = 0
                                         remark1.append(
                                             f"早退{n1}-{n2}分钟{num_early}次")
+                                        early_flag = False
+                                        is_early = True
                                         money_num += 10 * num_early
                                     else:
                                         num = max(num - num_early, 0)
@@ -181,7 +205,13 @@ class Attendance:
                                 num_early = rs.cell(row=i + 1,
                                                     column=search[early]).value
                                 if num_early:
-                                    remark1.append(f"早退{n1}-{n2}分钟{num_early}次")
+                                    is_early = True
+                                    if early_flag:
+                                        remark1.append(f"早退{n1}-{n2}分钟{num_early}次")
+                                        early_flag = False
+                                    else:
+                                        remark1.append(
+                                            f"{n1}-{n2}分钟{num_early}次")
                                     if n1 == "10":
                                         money_num += 20 * num_early
                                     elif n1 == "30":
@@ -192,14 +222,29 @@ class Attendance:
                             num_early = rs.cell(row=i + 1,
                                                 column=search[early]).value
                             if num_early:
-                                remark1.append(f"早退120分钟以上{num_early}次")
+                                is_early = True
+                                if early_flag:
+                                    remark1.append(f"早退120分钟以上{num_early}次")
+                                else:
+                                    remark1.append(f"120分钟以上{num_early}次")
                                 money_day += num_early
-                    if money_num > 0 and money_day > 0.4:
-                        remark2.append(f"迟到/早退扣{money_num}元+{money_day}天薪资")
-                    elif money_num > 0:
-                        remark2.append(f"迟到/早退扣{money_num}元")
-                    elif money_day > 0.4:
-                        remark2.append(f"迟到/早退扣{money_day}天薪资")
+
+                    if is_late and is_early:
+                        prefix_str = "迟到/早退"
+                    elif is_late:
+                        prefix_str = "迟到"
+                    elif is_early:
+                        prefix_str = "早退"
+                    else:
+                        prefix_str = ""
+
+                    if prefix_str:
+                        if money_num > 0 and money_day > 0.4:
+                            remark2.append(prefix_str + f"扣{money_num}元+{money_day}天薪资")
+                        elif money_num > 0:
+                            remark2.append(prefix_str + f"扣{money_num}元")
+                        elif money_day > 0.4:
+                            remark2.append(prefix_str + f"扣{money_day}天薪资")
                     # 统计缺卡次数
                     missing_num = 0
                     missing_cards = ["上班缺卡次数", "下班缺卡次数"]
@@ -216,6 +261,8 @@ class Attendance:
                         absenteeism = rs.cell(row=i + 1,
                                               column=search["旷工天数"]).value
                         absenteeism = int(absenteeism)
+                        ex_num = min(ex_num, 2)
+                        # print(i + 1, absenteeism, ex_num, absenteeism - ex_num)
                         absenteeism = max(absenteeism - ex_num, 0)
                         if absenteeism > 0:
                             remark1.append(f"旷工{absenteeism}天")
@@ -273,6 +320,8 @@ class Attendance:
                              "上班迟到120分钟以上"]
                     money_num = 0
                     money_day = 0
+                    late_flag = True
+                    is_late = False
                     for late in lates:
                         if re.search(r"(\d+)到(\d+)", late):
                             match = re.search(r"(\d+)到(\d+)", late)
@@ -288,6 +337,8 @@ class Attendance:
                                         num = 0
                                         remark1.append(
                                             f"迟到{n1}-{n2}分钟{num_late}次")
+                                        late_flag = False
+                                        is_late = True
                                         money_num += 10 * num_late
                                     else:
                                         num = max(num - num_late, 0)
@@ -295,7 +346,14 @@ class Attendance:
                                 num_late = rs.cell(row=i + 1,
                                                    column=search[late]).value
                                 if num_late:
-                                    remark1.append(f"迟到{n1}-{n2}分钟{num_late}次")
+                                    is_late = True
+                                    if late_flag:
+                                        remark1.append(
+                                            f"迟到{n1}-{n2}分钟{num_late}次")
+                                        late_flag = False
+                                    else:
+                                        remark1.append(
+                                            f"{n1}-{n2}分钟{num_late}次")
                                     if n1 == "10":
                                         money_num += 20 * num_late
                                     elif n1 == "30":
@@ -306,12 +364,18 @@ class Attendance:
                             num_late = rs.cell(row=i + 1,
                                                column=search[late]).value
                             if num_late:
-                                remark1.append(f"迟到120分钟以上{num_late}次")
+                                is_late = True
+                                if late_flag:
+                                    remark1.append(f"迟到120分钟以上{num_late}次")
+                                else:
+                                    remark1.append(f"120分钟以上{num_late}次")
                                 money_day += num_late
 
                     earlys = ["下班早退0到10分钟", "下班早退10到30分钟",
                               "下班早退30到60分钟", "下班早退60到120分钟",
                               "下班早退120分钟以上", ]
+                    early_flag = True
+                    is_early = False
                     for early in earlys:
                         if re.search(r"(\d+)到(\d+)", early):
                             match = re.search(r"(\d+)到(\d+)", early)
@@ -327,6 +391,8 @@ class Attendance:
                                         num = 0
                                         remark1.append(
                                             f"早退{n1}-{n2}分钟{num_early}次")
+                                        early_flag = False
+                                        is_early = True
                                         money_num += 10 * num_early
                                     else:
                                         num = max(num - num_early, 0)
@@ -334,7 +400,14 @@ class Attendance:
                                 num_early = rs.cell(row=i + 1,
                                                     column=search[early]).value
                                 if num_early:
-                                    remark1.append(f"早退{n1}-{n2}分钟{num_early}次")
+                                    is_early = True
+                                    if early_flag:
+                                        remark1.append(
+                                            f"早退{n1}-{n2}分钟{num_early}次")
+                                        early_flag = False
+                                    else:
+                                        remark1.append(
+                                            f"{n1}-{n2}分钟{num_early}次")
                                     if n1 == "10":
                                         money_num += 20 * num_early
                                     elif n1 == "30":
@@ -345,14 +418,30 @@ class Attendance:
                             num_early = rs.cell(row=i + 1,
                                                 column=search[early]).value
                             if num_early:
-                                remark1.append(f"早退120分钟以上{num_early}次")
+                                is_early = True
+                                if early_flag:
+                                    remark1.append(f"早退120分钟以上{num_early}次")
+                                else:
+                                    remark1.append(f"120分钟以上{num_early}次")
                                 money_day += num_early
-                    if money_num > 0 and money_day > 0.4:
-                        remark2.append(f"迟到/早退扣{money_num}元+{money_day}天薪资")
-                    elif money_num > 0:
-                        remark2.append(f"迟到/早退扣{money_num}元")
-                    elif money_day > 0.4:
-                        remark2.append(f"迟到/早退扣{money_day}天薪资")
+
+                    if is_late and is_early:
+                        prefix_str = "迟到/早退"
+                    elif is_late:
+                        prefix_str = "迟到"
+                    elif is_early:
+                        prefix_str = "早退"
+                    else:
+                        prefix_str = ""
+
+                    if prefix_str:
+                        if money_num > 0 and money_day > 0.4:
+                            remark2.append(
+                                prefix_str + f"扣{money_num}元+{money_day}天薪资")
+                        elif money_num > 0:
+                            remark2.append(prefix_str + f"扣{money_num}元")
+                        elif money_day > 0.4:
+                            remark2.append(prefix_str + f"扣{money_day}天薪资")
                     # 统计缺卡次数
                     missing_num = 0
                     missing_cards = ["上班缺卡次数", "下班缺卡次数"]
@@ -404,6 +493,8 @@ class Attendance:
                          "上班迟到120分钟以上"]
                 money_num = 0
                 money_day = 0
+                late_flag = True
+                is_late = False
                 for late in lates:
                     if re.search(r"(\d+)到(\d+)", late):
                         match = re.search(r"(\d+)到(\d+)", late)
@@ -419,6 +510,8 @@ class Attendance:
                                     num = 0
                                     remark1.append(
                                         f"迟到{n1}-{n2}分钟{num_late}次")
+                                    late_flag = False
+                                    is_late = True
                                     money_num += 10 * num_late
                                 else:
                                     num = max(num - num_late, 0)
@@ -426,7 +519,13 @@ class Attendance:
                             num_late = rs.cell(row=i + 1,
                                                column=search[late]).value
                             if num_late:
-                                remark1.append(f"迟到{n1}-{n2}分钟{num_late}次")
+                                is_late = True
+                                if late_flag:
+                                    remark1.append(f"迟到{n1}-{n2}分钟{num_late}次")
+                                    late_flag = False
+                                else:
+                                    remark1.append(
+                                        f"{n1}-{n2}分钟{num_late}次")
                                 if n1 == "10":
                                     money_num += 20 * num_late
                                 elif n1 == "30":
@@ -437,12 +536,18 @@ class Attendance:
                         num_late = rs.cell(row=i + 1,
                                            column=search[late]).value
                         if num_late:
-                            remark1.append(f"迟到120分钟以上{num_late}次")
+                            is_late = True
+                            if late_flag:
+                                remark1.append(f"迟到120分钟以上{num_late}次")
+                            else:
+                                remark1.append(f"120分钟以上{num_late}次")
                             money_day += num_late
 
                 earlys = ["下班早退0到10分钟", "下班早退10到30分钟",
                           "下班早退30到60分钟", "下班早退60到120分钟",
                           "下班早退120分钟以上", ]
+                early_flag = True
+                is_early = False
                 for early in earlys:
                     if re.search(r"(\d+)到(\d+)", early):
                         match = re.search(r"(\d+)到(\d+)", early)
@@ -458,6 +563,8 @@ class Attendance:
                                     num = 0
                                     remark1.append(
                                         f"早退{n1}-{n2}分钟{num_early}次")
+                                    early_flag = False
+                                    is_early = True
                                     money_num += 10 * num_early
                                 else:
                                     num = max(num - num_early, 0)
@@ -465,7 +572,13 @@ class Attendance:
                             num_early = rs.cell(row=i + 1,
                                                 column=search[early]).value
                             if num_early:
-                                remark1.append(f"早退{n1}-{n2}分钟{num_early}次")
+                                is_early = True
+                                if early_flag:
+                                    remark1.append(f"早退{n1}-{n2}分钟{num_early}次")
+                                    early_flag = False
+                                else:
+                                    remark1.append(
+                                        f"{n1}-{n2}分钟{num_early}次")
                                 if n1 == "10":
                                     money_num += 20 * num_early
                                 elif n1 == "30":
@@ -476,14 +589,30 @@ class Attendance:
                         num_early = rs.cell(row=i + 1,
                                             column=search[early]).value
                         if num_early:
-                            remark1.append(f"早退120分钟以上{num_early}次")
+                            is_early = True
+                            if early_flag:
+                                remark1.append(f"早退120分钟以上{num_early}次")
+                            else:
+                                remark1.append(f"120分钟以上{num_early}次")
                             money_day += num_early
-                if money_num > 0 and money_day > 0.4:
-                    remark2.append(f"迟到/早退扣{money_num}元+{money_day}天薪资")
-                elif money_num > 0:
-                    remark2.append(f"迟到/早退扣{money_num}元")
-                elif money_day > 0.4:
-                    remark2.append(f"迟到/早退扣{money_day}天薪资")
+
+                if is_late and is_early:
+                    prefix_str = "迟到/早退"
+                elif is_late:
+                    prefix_str = "迟到"
+                elif is_early:
+                    prefix_str = "早退"
+                else:
+                    prefix_str = ""
+
+                if prefix_str:
+                    if money_num > 0 and money_day > 0.4:
+                        remark2.append(
+                            prefix_str + f"扣{money_num}元+{money_day}天薪资")
+                    elif money_num > 0:
+                        remark2.append(prefix_str + f"扣{money_num}元")
+                    elif money_day > 0.4:
+                        remark2.append(prefix_str + f"扣{money_day}天薪资")
 
                 # 统计缺卡次数
                 missing_num = 0
@@ -495,12 +624,17 @@ class Attendance:
                     remark1.append(f"缺卡{missing_num}次")
                     remark2.append(f"缺卡{missing_num}次")
 
-            ws.cell(row=i, column=1).value = rs.cell(row=i + 1,
-                                                     column=search["备注1"]).value
-            ws.cell(row=i, column=3).value = rs.cell(row=i + 1,
-                                                     column=search["备注2"]).value
-            ws.cell(row=i, column=2).value = "，".join(remark1).replace(".0", "")
-            ws.cell(row=i, column=4).value = "，".join(remark2).replace(".0", "")
+            # ws.cell(row=i, column=1).value = rs.cell(row=i + 1,
+            #                                          column=search["姓名"]).value
+            # ws.cell(row=i, column=2).value = rs.cell(row=i + 1,
+            #                                          column=search["备注1"]).value
+            # ws.cell(row=i, column=4).value = rs.cell(row=i + 1,
+            #                                          column=search["备注2"]).value
+            # ws.cell(row=i, column=3).value = "，".join(remark1).replace(".0", "")
+            # ws.cell(row=i, column=5).value = "，".join(remark2).replace(".0", "")
+
+            rs.cell(row=i + 1, column=search["备注1"]).value = "，".join(remark1).replace(".0", "")
+            rs.cell(row=i + 1, column=search["备注2"]).value = "，".join(remark2).replace(".0", "")
 
             # if i == 4:
             #     entry = rs.cell(row=i + 1, column=search["入职时间"]).value
