@@ -1,6 +1,6 @@
 <h1 style="text-align:center">预训练模型</h1>
 
-- *目录*
+- 目录
     - [BERT](#bert)
     - [RoBERTa](#roberta)
     - [ELECTRA](#electra)
