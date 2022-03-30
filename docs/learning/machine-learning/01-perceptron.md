@@ -134,9 +134,189 @@ $$
 
 ## 实践
 
+使用pytorch实现[<sup>3</sup>](#参考)。
+
+```python
+import random
+import numpy as np
+import torch
+from torch.nn import Linear, Module
+from torch.utils.data import Dataset, DataLoader
+
+class Perceptron(Module):
+    """
+    感知机模型
+    """
+    def __init__(self, in_features, out_features):
+        super(Perceptron, self).__init__()
+        
+        self.linear = Linear(in_features, out_features)
+    
+    def loss(self, feature, label):
+        pred = self.linear(feature)
+        return -(pred * label)
+    
+    def forward(self, feature):
+        """
+        预测
+        """
+        output = torch.sign(self.linear(feature))
+        return output
+
+
+class PerceptronTrainer:
+    """
+    感知机训练类
+    """
+    def __init__(self, in_features, out_features):
+        self.model = Perceptron(in_features, out_features)
+    
+    def train(self, dataloader, lr=1, max_epoch=None):
+        """
+        训练
+        """
+        self.model.train()
+        optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
+        epoch = 0
+        while True:
+            count = 0
+            for feature, label in iter(dataloader):
+                optimizer.zero_grad()
+                loss = self.model.loss(feature, label)
+                if loss.item() >= 0:
+                    loss.backward()
+                    optimizer.step()
+                    count += 1
+            if count == 0:
+                break
+            
+            epoch += 1
+            if max_epoch and epoch > max_epoch:
+                break
+    
+    def get_params(self):
+        return list(self.model.parameters())
+    
+    def print(self):
+        for name, param in self.model.named_parameters():
+            print(f"{name}: {param}")
+    
+    def save(self, file_path):
+        torch.save(self.model.state_dict(), file_path)
+
+class PerceptronPredictor:
+    """
+    感知机预测类
+    """
+    def __init__(self, in_features, out_features):
+        self.model = Perceptron(in_features, out_features)
+    
+    def predict(self, feature):
+        result = self.model(feature)
+        return result
+    
+    def load(self, file_path):
+        self.model.load_state_dict(torch.load(file_path))
+        self.model.eval()
+
+        
+class PerceptronDataset(Dataset):
+    """
+    数据集
+    """
+    def __init__(self, train_data):
+        self._data = []
+        for data in train_data:
+            feature, label = data
+            feature = torch.tensor(feature, dtype=torch.float)
+            label = torch.tensor(label, dtype=torch.int)
+            self._data.append([feature, label])
+    
+    def __len__(self):
+        return len(self._data)
+
+    def __getitem__(self, idx):
+        return self._data[idx]
+        
+
+# 初始化
+def set_seed(seed=2020):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed) # if you are using multi-GPU.
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.enabled = False
+
+set_seed()
+
+# 数据集
+# datas = [((3, 3), 1), ((4, 3), 1), ((1, 1), -1)]
+datas = []
+for i in range(100):
+    x = random.randint(0, 50)
+    y = random.randint(0, 50)
+    if x > y:
+        datas.append(((x, y), 1))
+    else:
+        datas.append(((x, y), -1))
+train_data = PerceptronDataset(datas)
+train_dataloader = DataLoader(train_data, batch_size=1, shuffle=True)
+
+# 训练
+trainer = PerceptronTrainer(2, 1)
+trainer.train(train_dataloader, max_epoch=20)
+w, b = trainer.get_params()
+trainer.save("model.pt")
+
+# 预测
+predictor = PerceptronPredictor(2, 1)
+predictor.load("model.pt")
+feature = torch.tensor([[1, 1]], dtype=torch.float)
+predictor.predict(feature)
+
+# 画图
+from matplotlib import pyplot as plt
+
+def draw(datas, w, b):
+    n = len(datas)
+    x_list = [0] * n
+    x_right_list = []
+    y_right_list = []
+    x_error_list = []
+    y_error_list = []
+    for i in range(n):
+        (x, y), label = datas[i]
+        x_list[i] = x
+        if label == 1:
+            x_right_list.append(x)
+            y_right_list.append(y)
+        else:
+            x_error_list.append(x)
+            y_error_list.append(y)
+    plt.plot(x_right_list, y_right_list, 'o' + 'r', label='right', ms=10)
+    plt.plot(x_error_list, y_error_list, '*' + 'g', label='error', ms=10)
+    
+    line_x = np.arange(min(x_list), max(x_list), 1)
+    line_len = len(line_x)
+    line_y = [0] * line_len
+    for i in range(line_len):
+        line_y[i] = -(w[0]*line_x[i]+b)/w[1]  # 除0错误
+    plt.plot(line_x, line_y)
+    plt.show()
+
+
+draw(datas, w.tolist()[0], b.tolist()[0])
+```
+
+![生成图片](../../image/machine-learning/01-practice.png)
 
 ## 参考
 
 [1] [统计学习方法](#参考)
 
 [2] [感知机算法面试问题汇总](https://blog.csdn.net/longshaonihaoa/article/details/107234217)
+
+[3] [感知机及Python实现](https://blog.csdn.net/Jeaten/article/details/101202181)
