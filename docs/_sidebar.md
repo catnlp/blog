@@ -3,4 +3,7 @@
   * [k近邻算法](learning/machine-learning/02-knn.md)
 * [📚**深度学习**](learning/deep-learning/00-introduction.md)
 * [👑**自然语言处理**](learning/natural-language-processing/00-introduction.md)
+* [💎**推荐系统**](learning/recommender-system/00-introduction.md)
+---
 * [👨‍💻**算法**](learning/algorithm/00-introduction.md)
+* [🧰**工具**](learning/tool/00-introduction.md)
