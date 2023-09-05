@@ -51,6 +51,8 @@ python .\convert.py ..\models\Baichuan-7B\
 ```python
 .\build\bin\Release\quantize.exe ..\models\Baichuan-7B\ggml-model-f32.bin ..\models\
 Baichuan-7B\ggml-model-q4_0.bin q4_
+
+python .\convert-llama-ggmlv3-to-gguf.py --input ..\models\Baichuan-7B\ggml-model-q4_0.bin --output ..\models\Baichuan-7B\gguf-model-q4_0.bin
 ```
 
 ![convert](../../image/llm/02-quantize.png)
@@ -73,8 +75,6 @@ set FORCE_CMAKE=1
 set CMAKE_ARGS=-DLLAMA_CUBLAS=OFF
 python setup.py clean
 python setup.py install
+
+python -m llama_cpp.server --model ..\models\Baichuan-7B\gguf-model-q4_0.bin
 ```
-
-bug待解決
-
-
